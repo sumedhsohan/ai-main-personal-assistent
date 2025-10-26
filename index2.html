@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALEX AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+            padding: 10px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .left-panel {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(15, 15, 15, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 255, 255, 0.1);
+        }
+
+        .title {
+            font-size: clamp(20px, 4vw, 28px);
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .visualization {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 1;
+            margin: 20px 0;
+        }
+
+        #sphereCanvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .wave-container {
+            width: 100%;
+            max-width: 450px;
+            height: 80px;
+            margin-top: 20px;
+        }
+
+        #waveCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            font-size: clamp(12px, 2vw, 14px);
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-listen {
+            background: linear-gradient(135deg, #00ff00 0%, #00cc00 100%);
+            color: #000;
+        }
+
+        .btn-listening {
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 0, 0, 0.8); }
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            color: #fff;
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, #0080ff 0%, #0060cc 100%);
+            color: #fff;
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #ff9900 0%, #cc7700 100%);
+            color: #fff;
+        }
+
+        .right-panel {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(15, 15, 15, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 255, 255, 0.1);
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            margin-bottom: 15px;
+            font-size: clamp(11px, 2vw, 14px);
+            transition: all 0.3s ease;
+        }
+
+        .chat-header {
+            text-align: center;
+            color: #00ffff;
+            font-size: clamp(14px, 2.5vw, 18px);
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .chat-history {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            min-height: 300px;
+            max-height: 500px;
+        }
+
+        .chat-history::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-history::-webkit-scrollbar-track {
+            background: #0a0a0a;
+            border-radius: 10px;
+        }
+
+        .chat-history::-webkit-scrollbar-thumb {
+            background: #00ffff;
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            animation: fadeIn 0.3s ease;
+            word-wrap: break-word;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-user {
+            background: rgba(0, 255, 255, 0.15);
+            border-left: 3px solid #00ffff;
+        }
+
+        .message-alex {
+            background: rgba(0, 255, 0, 0.15);
+            border-left: 3px solid #00ff00;
+        }
+
+        .message-system {
+            background: rgba(255, 165, 0, 0.15);
+            border-left: 3px solid #ffa500;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: clamp(9px, 1.5vw, 11px);
+            margin-bottom: 5px;
+        }
+
+        .sender {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: clamp(11px, 2vw, 13px);
+        }
+
+        .message-content {
+            font-size: clamp(11px, 2vw, 13px);
+            line-height: 1.6;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .text-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            background: #1a1a1a;
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            color: #fff;
+            font-size: clamp(12px, 2vw, 14px);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .text-input:focus {
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        .btn-send {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00ffff 0%, #00cccc 100%);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: clamp(12px, 2vw, 14px);
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 255, 0.4);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #00ffff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .feature-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .pill {
+            background: rgba(0, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: clamp(9px, 1.5vw, 11px);
+            border: 1px solid #00ffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pill:hover {
+            background: rgba(0, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left-panel, .right-panel {
+                min-width: 100%;
+            }
+
+            .visualization {
+                max-width: 350px;
+            }
+
+            .controls {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 10px 15px;
+            }
+
+            .chat-history {
+                min-height: 250px;
+                max-height: 350px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 5px;
+                gap: 5px;
+            }
+
+            .left-panel, .right-panel {
+                padding: 15px;
+                border-radius: 15px;
+            }
+
+            .visualization {
+                max-width: 280px;
+            }
+
+            .controls {
+                gap: 8px;
+            }
+
+            .input-container {
+                flex-direction: column;
+            }
+
+            .text-input, .btn-send {
+                width: 100%;
+            }
+        }
+
+        .code-block {
+            background: #0a0a0a;
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(10px, 1.8vw, 12px);
+        }
+
+        .copy-btn {
+            background: #00ffff;
+            color: #000;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="title">🤖 ALEX AI ASSISTANT</div>
+            
+            <div class="visualization">
+                <canvas id="sphereCanvas" width="450" height="450"></canvas>
+            </div>
+
+            <div class="wave-container">
+                <canvas id="waveCanvas" width="450" height="100"></canvas>
+            </div>
+
+            <div class="feature-pills">
+                <div class="pill" onclick="quickCommand('Tell me a joke')">😄 Joke</div>
+                <div class="pill" onclick="quickCommand('Write a Python function')">💻 Code</div>
+                <div class="pill" onclick="quickCommand('What can you do?')">❓ Help</div>
+                <div class="pill" onclick="quickCommand('Open YouTube')">🎥 YouTube</div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-listen" id="listenBtn" onclick="toggleListening()">
+                    🎤 Listen
+                </button>
+                <button class="btn btn-stop" onclick="stopSpeaking()">
+                    ⏹️ Stop
+                </button>
+                <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()">
+                    📁 Upload
+                </button>
+                <button class="btn btn-clear" onclick="clearChat()">
+                    🗑️ Clear
+                </button>
+                <input type="file" id="fileInput" class="file-input" onchange="handleFileUpload(event)">
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="status" id="status">Status: Ready</div>
+            
+            <div class="chat-header">💬 Conversation</div>
+            
+            <div class="chat-history" id="chatHistory"></div>
+
+            <div class="input-container">
+                <input type="text" 
+                       class="text-input" 
+                       id="textInput" 
+                       placeholder="Type your message..."
+                       onkeypress="handleKeyPress(event)">
+                <button class="btn-send" onclick="sendTextCommand()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        // 🔑 PASTE YOUR MISTRAL API KEY HERE
+        const MISTRAL_API_KEY = 'JnWGPPkjGhNsU1ZHe7dc1ZdxH1FoKldx';
+        
+        // ==================== GLOBAL VARIABLES ====================
+        let isListening = false;
+        let isSpeaking = false;
+        let recognition = null;
+        let synth = window.speechSynthesis;
+        let conversationHistory = [];
+        let rotationAngle = 0;
+        let particles = [];
+        let waveAmplitude = 0;
+        let uploadedFile = null;
+        let canvasSize = { width: 450, height: 450 };
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let isRecordingAudio = false;
+
+        // ==================== SPEECH RECOGNITION SETUP ====================
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = () => {
+                    console.log('Speech recognition started');
+                    updateStatus('Listening for "Alex"...', 'listening');
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[event.results.length - 1][0].transcript.trim();
+                    console.log('Heard:', transcript);
+                    
+                    const lowerTranscript = transcript.toLowerCase();
+                    
+                    // Check if starts with wake word "Alex"
+                    if (lowerTranscript.startsWith('alex')) {
+                        if (isSpeaking) {
+                            stopSpeaking();
+                        }
+                        
+                        addMessage('User', transcript);
+                        
+                        // Extract command after "Alex"
+                        let command = transcript.substring(5).trim(); // Remove "Alex" or "alex"
+                        
+                        if (command) {
+                            processCommand(command);
+                        } else {
+                            speak('Yes, how can I help you?');
+                        }
+                    } else {
+                        // Ignore commands that don't start with "Alex"
+                        console.log('Ignored - did not start with "Alex":', transcript);
+                    }
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                        addMessage('System', '⚠️ Microphone access denied. Please allow microphone permissions.');
+                        speak('Microphone access is required for voice commands');
+                        isListening = false;
+                        const btn = document.getElementById('listenBtn');
+                        btn.textContent = '🎤 Listen';
+                        btn.className = 'btn btn-listen';
+                        updateStatus('Ready', 'idle');
+                    }
+                };
+
+                recognition.onend = () => {
+                    console.log('Speech recognition ended');
+                    if (isListening) {
+                        setTimeout(() => {
+                            try {
+                                recognition.start();
+                            } catch (e) {
+                                console.log('Restarting recognition...');
+                            }
+                        }, 100);
+                    }
+                };
+            } else {
+                console.error('Speech recognition not supported');
+            }
+        }
+
+        // Initialize on page load
+        initSpeechRecognition();
+
+        // ==================== PARTICLE INITIALIZATION ====================
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 50; i++) {
+                particles.push({
+                    angle: (Math.PI * 2 * i) / 50,
+                    radius: 150 + (50 * (i % 3)),
+                    speed: 0.01 + (0.01 * (i % 3))
+                });
+            }
+        }
+
+        initParticles();
+
+        // ==================== CANVAS SETUP ====================
+        function setupCanvas() {
+            const canvas = document.getElementById('sphereCanvas');
+            const container = canvas.parentElement;
+            const size = Math.min(container.clientWidth, container.clientHeight, 450);
+            canvas.width = size;
+            canvas.height = size;
+            canvasSize = { width: size, height: size };
+        }
+
+        window.addEventListener('resize', setupCanvas);
+        setupCanvas();
+
+        // ==================== ANIMATION ====================
+        function animateSphere() {
+            const canvas = document.getElementById('sphereCanvas');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvasSize.width / 2;
+            const centerY = canvasSize.height / 2;
+            const scale = canvasSize.width / 450;
+
+            ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
+
+            // Draw outer glow
+            for (let i = 10; i > 0; i--) {
+                const radius = (120 + i * 10) * scale;
+                const alpha = (1 - i / 10) * 0.3;
+                ctx.strokeStyle = `rgba(0, 255, 255, ${alpha})`;
+                ctx.lineWidth = 2 * scale;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Draw rotating lines
+            for (let i = 0; i < 8; i++) {
+                const angle = rotationAngle + (i * 45);
+                const rad = (angle * Math.PI) / 180;
+                const x1 = centerX + 100 * scale * Math.cos(rad);
+                const y1 = centerY + 100 * scale * Math.sin(rad);
+                const x2 = centerX - 100 * scale * Math.cos(rad);
+                const y2 = centerY - 100 * scale * Math.sin(rad);
+                
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 2 * scale;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+
+            // Draw particles
+            particles.forEach(particle => {
+                particle.angle += particle.speed;
+                const x = centerX + particle.radius * scale * Math.cos(particle.angle);
+                const y = centerY + particle.radius * scale * Math.sin(particle.angle);
+                
+                ctx.fillStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.arc(x, y, 2 * scale, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw core sphere
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 3 * scale;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 80 * scale, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw center text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${30 * scale}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('ALEX', centerX, centerY);
+
+            rotationAngle += 2;
+            requestAnimationFrame(animateSphere);
+        }
+
+        function animateWave() {
+            const canvas = document.getElementById('waveCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+            const centerY = height / 2;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Get audio level if microphone is active
+            if (isRecordingAudio && analyser) {
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(dataArray);
+                const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                waveAmplitude = Math.min(30, (average / 255) * 40);
+            } else if (isSpeaking) {
+                waveAmplitude = 20 + 10 * Math.sin(Date.now() / 100);
+            } else if (isListening) {
+                waveAmplitude = 5 + 3 * Math.sin(Date.now() / 200);
+            } else {
+                waveAmplitude = Math.max(0, waveAmplitude - 1);
+            }
+
+            // Draw wave
+            ctx.strokeStyle = isRecordingAudio ? '#00ff00' : (isSpeaking ? '#ff00ff' : '#00ffff');
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            for (let x = 0; x < width; x += 3) {
+                const y = centerY + waveAmplitude * Math.sin(x / 20 + Date.now() / 200);
+                if (x === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+
+            ctx.stroke();
+            
+            // Draw mirror wave
+            ctx.beginPath();
+            for (let x = 0; x < width; x += 3) {
+                const y = centerY - waveAmplitude * Math.sin(x / 20 + Date.now() / 200);
+                if (x === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+
+            requestAnimationFrame(animateWave);
+        }
+
+        // Start animations
+        animateSphere();
+        animateWave();
+
+        // ==================== SPEECH FUNCTIONS ====================
+        function speak(text) {
+            if (synth.speaking) {
+                synth.cancel();
+            }
+
+            isSpeaking = true;
+            updateStatus('Speaking...', 'speaking');
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                updateStatus(isListening ? 'Listening...' : 'Ready', isListening ? 'listening' : 'idle');
+            };
+
+            synth.speak(utterance);
+        }
+
+        function stopSpeaking() {
+            if (synth.speaking) {
+                synth.cancel();
+                isSpeaking = false;
+                updateStatus(isListening ? 'Listening...' : 'Ready', isListening ? 'listening' : 'idle');
+            }
+        }
+
+        function toggleListening() {
+            if (!recognition) {
+                addMessage('System', '⚠️ Speech recognition not supported in this browser. Try Chrome or Edge.');
+                speak('Speech recognition is not supported in this browser');
+                return;
+            }
+
+            isListening = !isListening;
+            const btn = document.getElementById('listenBtn');
+
+            if (isListening) {
+                btn.textContent = '🔴 Listening';
+                btn.className = 'btn btn-listening';
+                updateStatus('Listening for "Alex"...', 'listening');
+                
+                // Start microphone for wave animation
+                startMicrophone();
+                
+                try {
+                    recognition.start();
+                    speak('Listening activated. Say Alex followed by your command.');
+                } catch (e) {
+                    console.log('Recognition start error:', e);
+                }
+            } else {
+                btn.textContent = '🎤 Listen';
+                btn.className = 'btn btn-listen';
+                updateStatus('Ready', 'idle');
+                
+                // Stop microphone
+                stopMicrophone();
+                
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.log('Recognition stop error:', e);
+                }
+            }
+        }
+
+        // ==================== MICROPHONE FOR WAVE ANIMATION ====================
+        async function startMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                analyser.fftSize = 256;
+                microphone.connect(analyser);
+                isRecordingAudio = true;
+                console.log('Microphone started for wave animation');
+            } catch (error) {
+                console.error('Microphone access error:', error);
+                addMessage('System', '⚠️ Could not access microphone for wave animation');
+            }
+        }
+
+        function stopMicrophone() {
+            if (microphone) {
+                microphone.disconnect();
+                microphone = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            analyser = null;
+            isRecordingAudio = false;
+            waveAmplitude = 0;
+            console.log('Microphone stopped');
+        }
+
+        // ==================== CHAT FUNCTIONS ====================
+        function addMessage(sender, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const chatHistory = document.getElementById('chatHistory');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${sender.toLowerCase()}`;
+            
+            // Format code blocks if present
+            let formattedMessage = message;
+            if (message.includes('```')) {
+                formattedMessage = formatCodeBlocks(message);
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="timestamp">[${timestamp}]</div>
+                <div class="sender">${sender}:</div>
+                <div class="message-content">${formattedMessage}</div>
+            `;
+            
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function formatCodeBlocks(text) {
+            return text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                return `<div class="code-block"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre>${escapeHtml(code.trim())}</pre></div>`;
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyCode(button) {
+            const code = button.nextElementSibling.textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            });
+        }
+
+        function updateStatus(status, type = 'idle') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = `Status: ${status}`;
+            
+            const colors = {
+                'idle': { border: '#00ffff', bg: 'rgba(0, 255, 255, 0.1)' },
+                'listening': { border: '#00ff00', bg: 'rgba(0, 255, 0, 0.1)' },
+                'speaking': { border: '#ff00ff', bg: 'rgba(255, 0, 255, 0.1)' },
+                'thinking': { border: '#ffff00', bg: 'rgba(255, 255, 0, 0.1)' }
+            };
+            
+            const color = colors[type] || colors['idle'];
+            statusEl.style.borderColor = color.border;
+            statusEl.style.background = color.bg;
+        }
+
+        function clearChat() {
+            if (confirm('Clear all chat history?')) {
+                document.getElementById('chatHistory').innerHTML = '';
+                conversationHistory = [];
+                addMessage('System', 'Chat history cleared.');
+            }
+        }
+
+        // ==================== ADVANCED COMMAND PROCESSING ====================
+        async function processCommand(command) {
+            const cmd = command.toLowerCase().trim();
+
+            // System commands
+            if (cmd.includes('time')) {
+                const time = new Date().toLocaleTimeString();
+                const response = `The current time is ${time}`;
+                addMessage('Alex', response);
+                speak(response);
+                return;
+            }
+
+            if (cmd.includes('date')) {
+                const date = new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+                });
+                const response = `Today is ${date}`;
+                addMessage('Alex', response);
+                speak(response);
+                return;
+            }
+
+            // Calculator
+            if (cmd.includes('calculate') || cmd.includes('compute')) {
+                try {
+                    const math = cmd.replace(/calculate|compute|what is|what's/gi, '').trim();
+                    const result = eval(math.replace(/x/gi, '*'));
+                    const response = `The answer is ${result}`;
+                    addMessage('Alex', response);
+                    speak(response);
+                    return;
+                } catch (e) {
+                    const response = 'I could not calculate that. Please use proper mathematical notation.';
+                    addMessage('Alex', response);
+                    speak(response);
+                    return;
+                }
+            }
+
+            // Open websites
+            if (cmd.includes('open')) {
+                handleOpenCommand(cmd);
+                return;
+            }
+
+            // Search
+            if (cmd.includes('search')) {
+                handleSearchCommand(cmd);
+                return;
+            }
+
+            // Play music
+            if (cmd.includes('play') && (cmd.includes('spotify') || cmd.includes('music'))) {
+                window.open('https://open.spotify.com/', '_blank');
+                const response = 'Opening Spotify. You can search for your music there.';
+                addMessage('Alex', response);
+                speak(response);
+                return;
+            }
+
+            // File analysis
+            if (uploadedFile && (cmd.includes('file') || cmd.includes('analyze') || cmd.includes('read'))) {
+                await analyzeFile(command);
+                return;
+            }
+
+            // Default: AI response
+            await getAIResponse(command);
+        }
+
+        function handleOpenCommand(cmd) {
+            const sites = {
+                'google': 'https://www.google.com',
+                'youtube': 'https://www.youtube.com',
+                'instagram': 'https://www.instagram.com',
+                'facebook': 'https://www.facebook.com',
+                'twitter': 'https://www.twitter.com',
+                'x': 'https://www.x.com',
+                'linkedin': 'https://www.linkedin.com',
+                'github': 'https://www.github.com',
+                'chatgpt': 'https://chat.openai.com',
+                'spotify': 'https://open.spotify.com',
+                'netflix': 'https://www.netflix.com',
+                'amazon': 'https://www.amazon.com',
+                'reddit': 'https://www.reddit.com',
+                'wikipedia': 'https://www.wikipedia.org'
+            };
+
+            for (const [site, url] of Object.entries(sites)) {
+                if (cmd.includes(site)) {
+                    window.open(url, '_blank');
+                    const response = `Opening ${site}`;
+                    addMessage('Alex', response);
+                    speak(response);
+                    return;
+                }
+            }
+
+            const response = 'I can open websites like Google, YouTube, Instagram, ChatGPT, Spotify, and many more. Just tell me which one.';
+            addMessage('Alex', response);
+            speak(response);
+        }
+
+        function handleSearchCommand(cmd) {
+            let query = cmd.replace('search', '').replace('for', '').trim();
+            
+            if (cmd.includes('youtube')) {
+                query = query.replace('on youtube', '').replace('in youtube', '').trim();
+                window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+                speak(`Searching YouTube for ${query}`);
+            } else if (cmd.includes('google')) {
+                query = query.replace('on google', '').replace('in google', '').trim();
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                speak(`Searching Google for ${query}`);
+            } else if (cmd.includes('instagram')) {
+                query = query.replace('on instagram', '').replace('in instagram', '').trim();
+                window.open(`https://www.instagram.com/explore/tags/${encodeURIComponent(query)}/`, '_blank');
+                speak(`Searching Instagram for ${query}`);
+            } else {
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                speak(`Searching for ${query}`);
+            }
+            
+            addMessage('Alex', `Searching for: ${query}`);
+        }
+
+        async function getAIResponse(query) {
+            if (!MISTRAL_API_KEY || MISTRAL_API_KEY === 'YOUR_MISTRAL_API_KEY_HERE') {
+                const errorMsg = '⚠️ Please add your Mistral API key in the code to use AI features. Get it from console.mistral.ai';
+                addMessage('System', errorMsg);
+                speak('Please configure your Mistral API key first');
+                return;
+            }
+
+            updateStatus('Thinking...', 'thinking');
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = 'Status: Thinking... <span class="loading"></span>';
+
+            try {
+                // Simplified system prompt for faster responses
+                const systemPrompt = {
+                    role: 'system',
+                    content: `You are Alex, an advanced AI assistant. Be concise, accurate, and helpful. Format code with markdown code blocks.`
+                };
+
+                // Build conversation with limited history for speed
+                const messages = [systemPrompt];
+                
+                // Only include last 4 exchanges for faster processing
+                if (conversationHistory.length > 0) {
+                    messages.push(...conversationHistory.slice(-8));
+                }
+                
+                messages.push({
+                    role: 'user',
+                    content: query
+                });
+
+                const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${MISTRAL_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'mistral-large-latest',
+                        messages: messages,
+                        temperature: 0.7,
+                        max_tokens: 2000,  // Reduced for faster responses
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content;
+
+                // Keep only recent history to reduce payload size
+                if (conversationHistory.length > 16) {
+                    conversationHistory = conversationHistory.slice(-16);
+                }
+
+                conversationHistory.push({
+                    role: 'user',
+                    content: query
+                });
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: aiResponse
+                });
+
+                addMessage('Alex', aiResponse);
+                
+                // Speak concise summary for long responses
+                const speakText = aiResponse.length > 200 
+                    ? aiResponse.substring(0, 200).split('.')[0] + '. Check chat for full response.'
+                    : aiResponse.replace(/```[\s\S]*?```/g, 'Code provided in chat.');
+                
+                speak(speakText);
+                updateStatus(isListening ? 'Listening...' : 'Ready', isListening ? 'listening' : 'idle');
+            } catch (error) {
+                console.error('API Error:', error);
+                const errorMsg = '⚠️ Error connecting to AI. Please check your API key and internet connection.';
+                addMessage('System', errorMsg);
+                speak('Sorry, I encountered an error. Please check your API key.');
+                updateStatus(isListening ? 'Listening...' : 'Ready', isListening ? 'listening' : 'idle');
+            }
+        }
+
+        async function analyzeFile(question) {
+            if (!uploadedFile) {
+                const msg = 'Please upload a file first.';
+                addMessage('Alex', msg);
+                speak(msg);
+                return;
+            }
+
+            if (!MISTRAL_API_KEY || MISTRAL_API_KEY === 'YOUR_MISTRAL_API_KEY_HERE') {
+                const errorMsg = 'Please configure your API key first.';
+                addMessage('System', errorMsg);
+                speak(errorMsg);
+                return;
+            }
+
+            updateStatus('Analyzing file...', 'thinking');
+
+            try {
+                // Reduced file content size for faster processing
+                const fileContent = uploadedFile.content.substring(0, 8000);
+                const prompt = `File: ${uploadedFile.name}\n\n${fileContent}\n\nQuestion: ${question}\n\nAnswer concisely.`;
+
+                const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${MISTRAL_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'mistral-large-latest',
+                        messages: [
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.5,
+                        max_tokens: 1500  // Reduced for speed
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('File analysis failed');
+                }
+
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content;
+
+                addMessage('Alex', aiResponse);
+                speak('File analysis complete.');
+                updateStatus(isListening ? 'Listening...' : 'Ready', isListening ? 'listening' : 'idle');
+            } catch (error) {
+                const errorMsg = 'Error analyzing file. Please try again.';
+                addMessage('Alex', errorMsg);
+                speak(errorMsg);
+                updateStatus(isListening ? 'Listening...' : 'Ready', isListening ? 'listening' : 'idle');
+            }
+        }
+
+        // ==================== FILE UPLOAD ====================
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedFile = {
+                        name: file.name,
+                        content: e.target.result,
+                        type: file.type
+                    };
+                    addMessage('System', `📄 File uploaded: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+                    speak(`File ${file.name} uploaded successfully. What would you like to know about it?`);
+                };
+                
+                if (file.type.startsWith('text') || file.name.endsWith('.txt') || 
+                    file.name.endsWith('.js') || file.name.endsWith('.py') || 
+                    file.name.endsWith('.html') || file.name.endsWith('.css') ||
+                    file.name.endsWith('.json') || file.name.endsWith('.csv')) {
+                    reader.readAsText(file);
+                } else {
+                    addMessage('System', '⚠️ Please upload text-based files (txt, js, py, html, css, json, csv)');
+                    speak('Please upload a text-based file');
+                }
+            }
+        }
+
+        // ==================== TEXT INPUT ====================
+        function sendTextCommand() {
+            const input = document.getElementById('textInput');
+            const command = input.value.trim();
+            
+            if (command) {
+                addMessage('User', command);
+                input.value = '';
+                processCommand(command);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendTextCommand();
+            }
+        }
+
+        function quickCommand(command) {
+            document.getElementById('textInput').value = command;
+            sendTextCommand();
+        }
+
+        // ==================== WELCOME MESSAGE ====================
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (MISTRAL_API_KEY && MISTRAL_API_KEY !== 'YOUR_MISTRAL_API_KEY_HERE') {
+                    addMessage('System', '✅ Alex AI is ready! Say "Alex" followed by your command, or type below.');
+                    addMessage('Alex', `Hello! I'm Alex, your advanced AI assistant. I can help you with:
+                    
+• Writing code in any programming language
+• Opening websites and searching the web
+• Answering questions and explaining concepts
+• Analyzing files and documents
+• Solving math problems
+• Creative writing and brainstorming
+• And much more!
+
+To use voice commands, click the "Listen" button and say "Alex" followed by your command. 
+
+Examples:
+- "Alex, write a Python function"
+- "Alex, open YouTube"
+- "Alex, search for AI tutorials"
+- "Alex, what's the time?"
+
+Try it now!`);
+                } else {
+                    addMessage('System', '⚠️ Please add your Mistral API key in the code (line 244). Get your key from: https://console.mistral.ai/');
+                    speak('Please configure your Mistral API key to activate all features');
+                }
+            }, 500);
+        });
+
+        // ==================== RESPONSIVE HANDLING ====================
+        window.addEventListener('resize', () => {
+            setupCanvas();
+        });
+
+        // Prevent zoom on mobile
+        document.addEventListener('gesturestart', (e) => {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>
